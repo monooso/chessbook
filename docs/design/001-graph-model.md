@@ -15,7 +15,7 @@ A node does not store win/loss/draw counts directly. These are computed at query
 
 An edge represents a move played from one position to another. It connects a source node (the position before the move) to a destination node (the position after the move). It contains:
 
-- **Move**: the move that was played (e.g. in UCI or SAN notation)
+- **Move**: the move that was played, stored in UCI notation (see [006-move-notation](006-move-notation.md))
 - **Game IDs**: the set of games in which this move was played from this position
 
 The edge's game IDs are always a subset of the source node's game IDs. A game appears on the edge only if the player in that game actually chose this move in this position.
