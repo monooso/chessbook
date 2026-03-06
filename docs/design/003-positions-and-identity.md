@@ -18,6 +18,17 @@ Two games that reach the same position via different move orders (transpositions
 
 The full FEN string can serve as the position key, but it includes the halfmove clock and fullmove number, which may or may not be desirable for deduplication. Two positions that are identical in every way except that one is on move 10 and the other on move 25 are, for practical purposes, the same position. The exact key derivation (full FEN vs FEN minus move counters) is an implementation decision that can be deferred, but the design should anticipate it.
 
+### Zobrist hashing
+
+The expected implementation approach for position keys is Zobrist hashing. A Zobrist hash assigns a random bitstring to each combination of (piece, square, color) and XORs them together to produce a single integer key for the position. Additional bitstrings cover castling rights, en passant, and active color.
+
+This has two advantages over using FEN strings directly:
+
+1. **Speed**: integer comparison and hashing is faster than string comparison.
+2. **Incremental updates**: when processing a game move by move, the hash can be updated incrementally by XORing out the old state and XORing in the new state, rather than recomputing from scratch.
+
+The choice of which position components to include in the hash (e.g. whether to include move counters) determines the deduplication behaviour, just as with FEN-based keys.
+
 ## Perspective neutrality
 
 The graph does not distinguish between "my moves" and "opponent's moves." Nodes are positions, edges are moves. The active color is part of the position (encoded in the FEN), so a node implicitly knows whose turn it is, but this is a property of the position, not of the viewer.
