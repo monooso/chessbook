@@ -43,15 +43,34 @@ A row per ingested game.
 | `white` | `TEXT` | White player name |
 | `black` | `TEXT` | Black player name |
 | `result` | `SMALLINT` | 1 = white win, 0 = draw, -1 = black win |
-| `date` | `DATE` | Game date (nullable — PGN dates are sometimes partial or missing) |
-| `time_control` | `TEXT` | Time control string from PGN |
+| `year` | `SMALLINT` | Game year (nullable) |
+| `month` | `SMALLINT` | Game month (nullable) |
+| `day` | `SMALLINT` | Game day (nullable) |
+| `time_control` | `TEXT` | Raw time control string from PGN, preserved for provenance |
+| `time_control_category` | `SMALLINT` | Derived at ingestion: 1 = bullet, 2 = blitz, 3 = rapid, 4 = classical. Null if unparseable or missing |
 | `starting_fen` | `TEXT` | Starting position FEN. Null for standard starting position |
 | `dedup_hash` | `BYTEA` | Hash of Seven Tag Roster + movetext (see [007](007-ingestion.md)) |
 
 **Indexes:**
 - Unique constraint on `dedup_hash` (duplicate detection)
 - B-tree on `white` and `black` (player filtering)
-- B-tree on `date` (date range filtering)
+- B-tree on `(year, month, day)` (date range filtering)
+- B-tree on `time_control_category` (time control filtering)
+
+#### Partial dates
+
+PGN dates use `??` for unknown components (e.g. `2024.01.??`, `2024.??.??`). Rather than discarding partial dates or inventing data, the date is stored as three separate nullable columns. This preserves all available information: a game dated `2024.01.??` has year=2024, month=1, day=NULL.
+
+#### Time control categories
+
+The `time_control_category` is derived from the raw time control string at ingestion time. For time controls in the standard `base+increment` format (both in seconds), estimated game duration is `base + 40 * increment` (assuming ~40 moves). The category cutoffs follow FIDE/Lichess conventions:
+
+- **Bullet** (1): estimated duration < 3 minutes
+- **Blitz** (2): 3–10 minutes
+- **Rapid** (3): 10–60 minutes
+- **Classical** (4): ≥ 60 minutes
+
+Multi-stage time controls (e.g. `40/5400:1800`) are parsed by summing all stages. Unparseable or missing values produce NULL.
 
 Additional metadata columns (ECO code, event, site, round, Elo ratings, etc.) can be added as filtering needs emerge. The schema is not closed.
 
@@ -116,7 +135,9 @@ SELECT
 FROM position_games pg
 JOIN games g ON g.id = pg.game_id
 WHERE pg.position_id = $position_id
-  AND <filters>
+  AND g.year >= $year_from          -- example filters; all optional
+  AND g.time_control_category = $tc
+  AND g.white = $player
 
 UNION ALL
 
@@ -127,10 +148,12 @@ SELECT
 FROM edge_games eg
 JOIN games g ON g.id = eg.game_id
 WHERE eg.edge_id = ANY($edge_ids)
-  AND <filters>;
+  AND g.year >= $year_from
+  AND g.time_control_category = $tc
+  AND g.white = $player;
 ```
 
-Steps 1 and 2 are index lookups. Step 3 is a single query that returns all the data needed to compute win/loss/draw for the position and each outgoing move. The application partitions the results by source (position vs each edge) and counts outcomes.
+Steps 1 and 2 are index lookups. Step 3 is a single query that returns all the data needed to compute win/loss/draw for the position and each outgoing move. Filters target indexed columns (`year`, `time_control_category`, `white`/`black`). The application partitions the results by source (position vs each edge) and counts outcomes.
 
 ## Ingestion write pattern
 
