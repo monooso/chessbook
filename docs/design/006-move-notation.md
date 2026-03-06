@@ -25,6 +25,14 @@ SAN derivation only runs for moves that are actually displayed — at most a few
 
 The concern would be different if we were batch-converting entire databases on load, but we are not. The conversion happens on the display path, for the small set of moves visible on screen.
 
+## Chess960 castling
+
+In standard chess, castling is encoded as a king move to its destination square: `e1g1` (O-O) or `e1c1` (O-O-O). This works because the king's starting square and castling destinations are always the same.
+
+In Chess960, the king and rooks start on arbitrary squares, so the standard encoding is ambiguous — a king moving two squares sideways might be a normal king move or a castling move. The UCI convention for Chess960 is to encode castling as "king captures own rook": `e1h1` (if the rook is on h1) or `e1a1` (if the rook is on a1). The actual destination squares of the king and rook after castling are determined by the rules, not the notation.
+
+This means the same castling move (e.g., kingside castling) has different UCI representations depending on where the rook started. The edge in the graph stores whatever UCI string encodes the move, and the chess library handles the mapping to actual piece movement during ingestion and display. No special treatment is needed in the graph structure or schema — it's a concern of the move-parsing layer.
+
 ## Conversions in both directions require position
 
 Neither direction — UCI to SAN or SAN to UCI — is a pure string transformation. Both require the board position:
