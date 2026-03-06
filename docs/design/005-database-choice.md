@@ -28,7 +28,7 @@ Running a graph database for positions alongside Postgres for games doubles the 
 No exotic capabilities are required. PostgreSQL is a well-understood, well-supported relational database with:
 
 - Mature indexing (B-tree, GIN for array columns, hash indexes)
-- Integer array columns, which are a natural fit for game ID sets
+- Join tables and B-tree indexes, which handle the game ID association workload well (see [008-schema](008-schema.md))
 - A broad ecosystem for tooling, hosting, backups, and monitoring
 - Extensive documentation and community support
 
