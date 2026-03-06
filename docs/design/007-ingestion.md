@@ -2,25 +2,31 @@
 
 Ingestion is the process of turning a PGN file into graph entries. For each game, we replay the moves sequentially, upserting position nodes and appending the game ID to the relevant nodes and edges.
 
-## Per-game atomicity
+## Two-phase processing
 
-Each game is an atomic unit of work. If a game fails mid-ingestion, we roll back only that game. There is no file-level transaction wrapping thousands of games — we do not want to discard thousands of successful imports because one game failed.
+Ingestion is two-phase: **validate first, then ingest.**
+
+In the validation phase, we parse every game in the file and reject the entire file if any game is malformed (see "File validation" below). No database writes occur during validation. This catches problems early and ensures we never partially ingest a file that contains bad data.
+
+In the ingestion phase, we replay each validated game and upsert its positions and moves into the graph. Each game is an atomic unit of work during this phase. If a game fails mid-ingestion (e.g., a database write error), we roll back only that game. There is no file-level transaction wrapping thousands of games — we do not want to discard thousands of successful imports because one game hit a transient database error.
+
+In short: validation failures reject the file; ingestion failures reject the game.
 
 ## Duplicate detection
 
-We detect and reject duplicate games to avoid inflating statistics. The deduplication key is a hash of all standard PGN headers plus the full movetext. This handles edge cases like the same two players playing multiple games on the same date (the movetext or round number will differ), and is robust even for online blitz where metadata alone might collide.
+We detect and reject duplicate games to avoid inflating statistics. The deduplication key is a hash of the Seven Tag Roster (Event, Site, Date, Round, White, Black, Result) plus the full movetext. This handles edge cases like the same two players playing multiple games on the same date (the movetext or round number will differ), and is robust even for online blitz where metadata alone might collide.
 
-Games with missing or incomplete headers are rejected at the file validation stage (see below), so we do not need to handle deduplication for games with insufficient metadata.
+Games with missing or incomplete headers are rejected at the file validation stage (see above), so we do not need to handle deduplication for games with insufficient metadata.
 
 ## File validation
 
-We reject the entire file if any game in it is malformed. This includes:
+File validation is the first phase of ingestion (see "Two-phase processing" above). We parse every game in the file and reject the entire file if any game is malformed. This includes:
 
 - Illegal moves
 - Truncated move lists
 - Missing required headers
 
-This is a correctness-first tool, not a browser. Malformed input is the caller's problem.
+No database writes occur during validation. This is a correctness-first tool, not a browser. Malformed input is the caller's problem.
 
 When a file is rejected, we return a structured error describing what went wrong: which game (by index), what the problem was, and enough context to locate it in the original file. No formal logging subsystem is needed up front, but the error information must be sufficient for diagnosis.
 

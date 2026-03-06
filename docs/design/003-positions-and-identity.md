@@ -18,6 +18,22 @@ Two games that reach the same position via different move orders (transpositions
 
 The position key is derived from the FEN *excluding* the halfmove clock and fullmove number. Two positions that are identical in every way except that one is on move 10 and the other on move 25 are, for practical purposes, the same position. Including move counters would split what should be a single node into many, defeating transposition detection.
 
+### Castling rights and en passant in position identity
+
+Two positions with identical piece placement but different castling rights or en passant status have different legal moves and are therefore different positions. These cases matter:
+
+- **Castling rights.** A position where White can castle kingside has a legal move (O-O) that the same board layout without that right does not. Castling rights erode over the course of a game (by moving the king or rook) and cannot be recovered. Two games can reach identical piece configurations where one has preserved castling rights and the other has not. These must be distinct nodes, because the available moves — and therefore the strategic evaluation — differ.
+
+- **En passant.** If a pawn has just advanced two squares and an opposing pawn is in position to capture it en passant, the en passant capture is a legal move that does not exist in an otherwise identical position without the en passant right. En passant is only legal on the move immediately following the double advance, so this is inherently transient.
+
+Both are already encoded in the FEN and therefore included in the position key.
+
+#### En passant normalization
+
+Standard FEN records an en passant target square whenever a pawn advances two squares, regardless of whether an opposing pawn is actually in position to capture. This means two positions can differ in FEN but have identical legal moves — one records a "phantom" en passant square that no piece can exploit.
+
+We normalize this: the en passant square is included in the position key only when the en passant capture is actually legal (i.e., an opposing pawn is on an adjacent file in position to capture). If no capture is possible, the en passant component is omitted. This avoids splitting what is functionally the same position into distinct nodes.
+
 ### Why the halfmove clock is excluded
 
 The halfmove clock (used for the fifty-move rule) is path-dependent: it depends on the sequence of moves that led to the position, not the position itself. The same board state can have different halfmove clocks depending on which game reached it and by what route. Storing it on a position node would be incoherent — the node represents many games, each potentially with a different clock value.
@@ -34,6 +50,10 @@ This has two advantages over using FEN strings directly:
 2. **Incremental updates**: when processing a game move by move, the hash can be updated incrementally by XORing out the old state and XORing in the new state, rather than recomputing from scratch.
 
 The hash excludes the halfmove clock and fullmove number, consistent with the position key derivation described above.
+
+### Target scale
+
+The system is designed to support tens of millions of games and hundreds of millions of distinct positions. This is roughly the order of magnitude of a full Lichess database export. Design decisions (hash width, storage format, query patterns) are evaluated against this target.
 
 ### Hash collisions
 

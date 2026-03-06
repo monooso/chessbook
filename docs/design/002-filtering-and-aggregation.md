@@ -59,6 +59,10 @@ Pre-aggregating across every combination of filters (color × time control × pl
 
 For hot paths (popular positions, common filter combinations), caching at the application layer is straightforward and doesn't require structural changes to the data model.
 
+## Query interface (deferred)
+
+How a client looks up a position — by FEN string, Zobrist hash, move sequence from a known starting position, or some combination — is deferred to implementation planning. The filtering and aggregation model described here is independent of the lookup mechanism.
+
 ## Caching (deferred)
 
 The caching strategy is intentionally deferred. Without real data and working code, any caching decisions would be speculative. The design accommodates caching — game IDs on nodes/edges are stable, filter combinations are deterministic, and results are pure functions of (game IDs × filters) — but the specifics (what to cache, where, eviction policy, invalidation on new game ingestion) should be informed by actual query patterns and performance profiling.

@@ -37,7 +37,7 @@ Games are the single source of truth for all metadata. Nodes and edges reference
 
 We initially considered storing game IDs only on edges, since every game that reaches a position must have arrived via some move (or be the starting position). However, computing a position's aggregate stats would then require collecting game IDs from all incoming edges plus accounting for games that start at this position. This is fragile and expensive.
 
-Storing game IDs on the node directly is redundant but makes the model uniform: every entity in the graph (node or edge) carries a bag of game IDs, and filtered stats can be computed against any of them in exactly the same way.
+Storing game IDs on the node directly is redundant but makes the model uniform: every entity in the graph (node or edge) carries a set of game IDs, and filtered stats can be computed against any of them in exactly the same way.
 
 ## Why no pre-aggregated win/loss/draw counts?
 
