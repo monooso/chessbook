@@ -30,13 +30,9 @@ No database writes occur during validation. This is a correctness-first tool, no
 
 When a file is rejected, we return a structured error describing what went wrong: which game (by index), what the problem was, and enough context to locate it in the original file. No formal logging subsystem is needed up front, but the error information must be sufficient for diagnosis.
 
-## Source tracking
+## Source tracking (deferred)
 
-Each ingestion operation is assigned a unique identifier (auto-increment, not derived from the file). We store metadata about the operation: original filename, timestamp, and game count. Each game record references its ingestion source ID.
-
-This makes it possible to delete everything from a specific ingestion operation without needing the original file. The identifier is ours, not the file's — two files with the same name produce two distinct ingestion records.
-
-For bulk imports (e.g. a Lichess database dump extracted from a ZIP), each PGN file within the archive becomes its own ingestion operation.
+Source tracking — recording which ingestion operation produced each game, to enable bulk deletion by source — is deferred. The use case is real but not critical for v1, and retrofitting it later is straightforward: add an ingestion operations table, add a nullable foreign key column to games, and backfill as needed. Nothing in the current design makes this harder to add later.
 
 ## Concurrency
 
