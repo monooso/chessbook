@@ -16,7 +16,13 @@ Two games that reach the same position via different move orders (transpositions
 
 ### FEN as key vs derived key
 
-The full FEN string can serve as the position key, but it includes the halfmove clock and fullmove number, which may or may not be desirable for deduplication. Two positions that are identical in every way except that one is on move 10 and the other on move 25 are, for practical purposes, the same position. The exact key derivation (full FEN vs FEN minus move counters) is an implementation decision that can be deferred, but the design should anticipate it.
+The position key is derived from the FEN *excluding* the halfmove clock and fullmove number. Two positions that are identical in every way except that one is on move 10 and the other on move 25 are, for practical purposes, the same position. Including move counters would split what should be a single node into many, defeating transposition detection.
+
+### Why the halfmove clock is excluded
+
+The halfmove clock (used for the fifty-move rule) is path-dependent: it depends on the sequence of moves that led to the position, not the position itself. The same board state can have different halfmove clocks depending on which game reached it and by what route. Storing it on a position node would be incoherent — the node represents many games, each potentially with a different clock value.
+
+This is fine because the graph is a derived view, not the canonical store. The original game records (PGN or equivalent) are the source of truth. If the halfmove clock is ever needed (e.g. to evaluate fifty-move-rule claims), it can be derived by replaying the relevant game's move list from its starting position — a trivial operation over a flat list of 40-80 moves. The graph is never walked backward to reconstruct this information.
 
 ### Zobrist hashing
 
@@ -27,7 +33,19 @@ This has two advantages over using FEN strings directly:
 1. **Speed**: integer comparison and hashing is faster than string comparison.
 2. **Incremental updates**: when processing a game move by move, the hash can be updated incrementally by XORing out the old state and XORing in the new state, rather than recomputing from scratch.
 
-The choice of which position components to include in the hash (e.g. whether to include move counters) determines the deduplication behaviour, just as with FEN-based keys.
+The hash excludes the halfmove clock and fullmove number, consistent with the position key derivation described above.
+
+### Hash collisions
+
+At large scale (millions of games, billions of distinct positions), Zobrist hash collisions become a real concern. With 64-bit hashes the birthday paradox puts collision probability in non-trivial territory around 2^32 (~4 billion) distinct positions.
+
+The approach is the same one used by every hash-based data structure: **hash as index, verify with the full position.**
+
+1. **The Zobrist hash is used for fast lookup**, narrowing the search to a small number of candidate nodes in O(1).
+2. **Each node stores the full position data** — piece placement, active color, castling rights, and en passant square — compactly (32 bytes or less).
+3. **On lookup, the full position is compared** to confirm identity. Two positions that happen to collide on the hash get separate nodes.
+
+The hash is a performance optimization, not an identity. The full position data is the authoritative key. The storage overhead is modest: at a billion positions, the full position data adds roughly 32 GB, which is manageable.
 
 ## Perspective neutrality
 
