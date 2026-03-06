@@ -1,0 +1,41 @@
+# 007: Ingestion
+
+Ingestion is the process of turning a PGN file into graph entries. For each game, we replay the moves sequentially, upserting position nodes and appending the game ID to the relevant nodes and edges.
+
+## Per-game atomicity
+
+Each game is an atomic unit of work. If a game fails mid-ingestion, we roll back only that game. There is no file-level transaction wrapping thousands of games — we do not want to discard thousands of successful imports because one game failed.
+
+## Duplicate detection
+
+We detect and reject duplicate games to avoid inflating statistics. The deduplication key is a hash of all standard PGN headers plus the full movetext. This handles edge cases like the same two players playing multiple games on the same date (the movetext or round number will differ), and is robust even for online blitz where metadata alone might collide.
+
+Games with missing or incomplete headers are rejected at the file validation stage (see below), so we do not need to handle deduplication for games with insufficient metadata.
+
+## File validation
+
+We reject the entire file if any game in it is malformed. This includes:
+
+- Illegal moves
+- Truncated move lists
+- Missing required headers
+
+This is a correctness-first tool, not a browser. Malformed input is the caller's problem.
+
+When a file is rejected, we return a structured error describing what went wrong: which game (by index), what the problem was, and enough context to locate it in the original file. No formal logging subsystem is needed up front, but the error information must be sufficient for diagnosis.
+
+## Source tracking
+
+Each ingestion operation is assigned a unique identifier (auto-increment, not derived from the file). We store metadata about the operation: original filename, timestamp, and game count. Each game record references its ingestion source ID.
+
+This makes it possible to delete everything from a specific ingestion operation without needing the original file. The identifier is ours, not the file's — two files with the same name produce two distinct ingestion records.
+
+For bulk imports (e.g. a Lichess database dump extracted from a ZIP), each PGN file within the archive becomes its own ingestion operation.
+
+## Concurrency
+
+Ingestion is parallelised at the file level: multiple files can be ingested concurrently, each processed by an independent worker. Within a single file, games are processed sequentially.
+
+The core ingestion function for a single game is simple and sequential — it takes a game and a reference to the graph, and returns a result. Parallelism lives in the orchestration layer above it. The only shared resource is the graph itself, and batch results are merged under a lock.
+
+This gives us a natural scaling lever for large imports without introducing complexity into the per-game ingestion logic. It is straightforward to implement in any language and avoids fine-grained contention on hot positions (e.g. 1. e4, which appears in ~40% of all games).
