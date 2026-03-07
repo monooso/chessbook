@@ -95,13 +95,13 @@ func parseTag(line string) (string, string, error) {
 	}
 
 	inner := line[1 : len(line)-1]
-	spaceIdx := strings.IndexByte(inner, ' ')
-	if spaceIdx < 0 {
+	before, after, ok := strings.Cut(inner, " ")
+	if !ok {
 		return "", "", fmt.Errorf("pgn: invalid tag pair: %q", line)
 	}
 
-	key := inner[:spaceIdx]
-	valueStr := strings.TrimSpace(inner[spaceIdx+1:])
+	key := before
+	valueStr := strings.TrimSpace(after)
 
 	// Remove surrounding quotes.
 	if len(valueStr) < 2 || valueStr[0] != '"' || valueStr[len(valueStr)-1] != '"' {

@@ -15,7 +15,7 @@ func TestParseStartingPosition(t *testing.T) {
 	want := board.StartingPosition()
 
 	// Check all 64 squares.
-	for sq := board.Square(0); sq < 64; sq++ {
+	for sq := range board.Square(64) {
 		if got, w := pos.PieceAt(sq), want.PieceAt(sq); got != w {
 			t.Errorf("PieceAt(%s) = %s, want %s", sq, got, w)
 		}

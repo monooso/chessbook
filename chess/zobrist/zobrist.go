@@ -7,10 +7,11 @@ import (
 )
 
 // Table layout:
-//   [0..767]   piece-on-square: 12 pieces × 64 squares
-//   [768..783] castling rights: 2 colours × 8 files
-//   [784..791] en passant file: 8 files
-//   [792]      side to move (XORed in when black to move)
+//
+//	[0..767]   piece-on-square: 12 pieces × 64 squares
+//	[768..783] castling rights: 2 colours × 8 files
+//	[784..791] en passant file: 8 files
+//	[792]      side to move (XORed in when black to move)
 const (
 	pieceSquareOffset = 0
 	castlingOffset    = 768
@@ -38,7 +39,7 @@ func Hash(pos *board.Position) uint64 {
 	var h uint64
 
 	// Piece placement.
-	for sq := board.Square(0); sq < 64; sq++ {
+	for sq := range board.Square(64) {
 		p := pos.PieceAt(sq)
 		if !p.IsEmpty() {
 			h ^= pieceSquareKey(p, sq)

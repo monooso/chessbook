@@ -62,7 +62,7 @@ func (pos *Position) Remove(sq Square) {
 // or NoSquare if no king is found.
 func FindKing(pos *Position, c Color) Square {
 	king := NewPiece(c, King)
-	for sq := Square(0); sq < 64; sq++ {
+	for sq := range Square(64) {
 		if pos.PieceAt(sq) == king {
 			return sq
 		}

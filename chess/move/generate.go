@@ -7,7 +7,7 @@ func Generate(pos *board.Position) []Move {
 	var moves []Move
 	color := pos.SideToMove
 
-	for sq := board.Square(0); sq < 64; sq++ {
+	for sq := range board.Square(64) {
 		p := pos.PieceAt(sq)
 		if p.IsEmpty() || p.Color() != color {
 			continue

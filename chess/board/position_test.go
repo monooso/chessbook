@@ -6,7 +6,7 @@ func TestEmptyPosition(t *testing.T) {
 	pos := EmptyPosition()
 
 	// All squares should be empty.
-	for sq := Square(0); sq < 64; sq++ {
+	for sq := range Square(64) {
 		if p := pos.PieceAt(sq); !p.IsEmpty() {
 			t.Errorf("PieceAt(%s) = %s, want empty", sq, p)
 		}

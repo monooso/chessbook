@@ -1,6 +1,7 @@
 package ingest
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/monooso/chessbook/chess/pgn"
@@ -40,9 +41,7 @@ func TestDedupHash(t *testing.T) {
 	// Different player produces different hash.
 	g3 := g
 	g3.Tags = make(map[string]string)
-	for k, v := range g.Tags {
-		g3.Tags[k] = v
-	}
+	maps.Copy(g3.Tags, g.Tags)
 	g3.Tags["White"] = "Charlie"
 	hash4 := dedupHash(g3)
 	if hash1 == hash4 {

@@ -238,7 +238,7 @@ func TestPositionViewWithFilter(t *testing.T) {
 	data := board.Encode(&pos)
 
 	// Filter to blitz only.
-	filter := &Filter{TimeControlCategory: intPtr(2)}
+	filter := &Filter{TimeControlCategory: new(2)}
 	view, err := PositionView(ctx, pool, hash, data, filter)
 	if err != nil {
 		t.Fatalf("PositionView: %v", err)
@@ -251,5 +251,3 @@ func TestPositionViewWithFilter(t *testing.T) {
 		t.Errorf("filtered white wins = %d, want 1", view.Stats.WhiteWins)
 	}
 }
-
-func intPtr(v int) *int { return &v }

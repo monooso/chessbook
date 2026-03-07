@@ -23,9 +23,9 @@ func parseTimeControlCategory(tc string) (int16, bool) {
 	// Multi-stage: "40/5400:1800" — sum all stage times.
 	// Single stage: "300+5" — base+increment.
 	totalSeconds := 0
-	stages := strings.Split(tc, ":")
+	stages := strings.SplitSeq(tc, ":")
 
-	for _, stage := range stages {
+	for stage := range stages {
 		// Strip move count prefix if present (e.g., "40/5400" → "5400").
 		if idx := strings.IndexByte(stage, '/'); idx >= 0 {
 			stage = stage[idx+1:]
