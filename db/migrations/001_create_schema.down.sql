@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS edge_games;
+DROP TABLE IF EXISTS position_games;
+DROP TABLE IF EXISTS edges;
+DROP TABLE IF EXISTS games;
+DROP TABLE IF EXISTS positions;
+DROP TABLE IF EXISTS schema_migrations;
