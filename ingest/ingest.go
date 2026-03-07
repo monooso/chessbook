@@ -26,6 +26,10 @@ type IngestResult struct {
 // Each game is processed in its own transaction; failures are recorded
 // but do not prevent other games from being ingested.
 func IngestFile(ctx context.Context, pool *pgxpool.Pool, validated []ValidatedGame, raw []pgn.Game) (IngestResult, error) {
+	if len(validated) != len(raw) {
+		return IngestResult{}, fmt.Errorf("ingest: validated (%d) and raw (%d) game counts differ", len(validated), len(raw))
+	}
+
 	var result IngestResult
 
 	for i, vg := range validated {

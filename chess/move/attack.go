@@ -15,7 +15,7 @@ func IsSquareAttacked(pos *board.Position, sq board.Square, byColor board.Color)
 
 // IsInCheck returns true if the side to move is in check.
 func IsInCheck(pos *board.Position) bool {
-	kingSq := findKing(pos, pos.SideToMove)
+	kingSq := board.FindKing(pos, pos.SideToMove)
 	if kingSq == board.NoSquare {
 		return false
 	}
@@ -129,13 +129,3 @@ func isKingAttacking(pos *board.Position, sq board.Square, byColor board.Color) 
 	return false
 }
 
-// findKing returns the square of the king of the given colour, or NoSquare if not found.
-func findKing(pos *board.Position, c board.Color) board.Square {
-	king := board.NewPiece(c, board.King)
-	for sq := board.Square(0); sq < 64; sq++ {
-		if pos.PieceAt(sq) == king {
-			return sq
-		}
-	}
-	return board.NoSquare
-}

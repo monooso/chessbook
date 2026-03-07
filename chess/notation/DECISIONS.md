@@ -12,10 +12,6 @@ The trade-off is performance: move generation is called multiple times per conve
 
 `SANToMove` strips `+` and `#` markers before parsing, since they're redundant — the move is fully determined by the piece, disambiguation, target square, and promotion.
 
-## Duplicate `findKing`
-
-Both `notation` and `move` packages contain an unexported `findKing` function. The `move` package's version is unexported, so `notation` needs its own copy. This is a small amount of acceptable duplication.
-
 ## Castling direction detection
 
 Castling is classified as kingside or queenside by comparing the rook's file (the `To` square in our king-captures-rook representation) to the king's file. This works for both standard and Chess960 positions.

@@ -37,7 +37,7 @@ func Generate(pos *board.Position) []Move {
 		after := Apply(pos, m)
 		// Check if our king is in check in the resulting position.
 		// After Apply, SideToMove has flipped, so our colour is after.SideToMove.Flip().
-		kingSq := findKing(&after, color)
+		kingSq := board.FindKing(&after, color)
 		if kingSq == board.NoSquare {
 			continue
 		}
@@ -184,7 +184,7 @@ func generateKingMoves(pos *board.Position, sq board.Square, color board.Color, 
 }
 
 func generateCastlingMoves(pos *board.Position, color board.Color, moves []Move) []Move {
-	kingSq := findKing(pos, color)
+	kingSq := board.FindKing(pos, color)
 	if kingSq == board.NoSquare {
 		return moves
 	}

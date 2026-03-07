@@ -166,7 +166,7 @@ func parseSAN(san string) (parsedSAN, error) {
 func matchCastling(pos *board.Position, san string) (move.Move, error) {
 	moves := move.Generate(pos)
 
-	kingSq := findKing(pos, pos.SideToMove)
+	kingSq := board.FindKing(pos, pos.SideToMove)
 	if kingSq == board.NoSquare {
 		return move.Move{}, fmt.Errorf("notation: no king found for castling")
 	}
@@ -188,16 +188,6 @@ func matchCastling(pos *board.Position, san string) (move.Move, error) {
 	}
 
 	return move.Move{}, fmt.Errorf("notation: castling %q not legal", san)
-}
-
-func findKing(pos *board.Position, c board.Color) board.Square {
-	king := board.NewPiece(c, board.King)
-	for sq := board.Square(0); sq < 64; sq++ {
-		if pos.PieceAt(sq) == king {
-			return sq
-		}
-	}
-	return board.NoSquare
 }
 
 // MoveToSAN converts a Move to SAN notation, given the current position.

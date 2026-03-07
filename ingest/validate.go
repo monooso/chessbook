@@ -10,8 +10,9 @@ import (
 	"github.com/monooso/chessbook/chess/pgn"
 )
 
-// requiredTags are the PGN Seven Tag Roster fields that must be present.
-var requiredTags = []string{"Event", "Site", "Date", "Round", "White", "Black", "Result"}
+// SevenTagRoster lists the PGN Seven Tag Roster fields in canonical order.
+// Used for both validation (all must be present) and dedup hashing.
+var SevenTagRoster = []string{"Event", "Site", "Date", "Round", "White", "Black", "Result"}
 
 // ValidatedGame is a game that has passed validation. It carries the replayed
 // positions and moves so that ingestion does not need to replay them.
@@ -41,10 +42,15 @@ func ValidateFile(games []pgn.Game) ([]ValidatedGame, error) {
 
 func validateGame(g pgn.Game) (ValidatedGame, error) {
 	// Check required tags.
-	for _, tag := range requiredTags {
+	for _, tag := range SevenTagRoster {
 		if _, ok := g.Tags[tag]; !ok {
 			return ValidatedGame{}, fmt.Errorf("missing required tag %q", tag)
 		}
+	}
+
+	// Reject games with unknown result.
+	if g.Result == "*" {
+		return ValidatedGame{}, fmt.Errorf("incomplete game (result is *)")
 	}
 
 	// Determine starting position.

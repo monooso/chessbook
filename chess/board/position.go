@@ -58,6 +58,18 @@ func (pos *Position) Remove(sq Square) {
 	pos.Squares[sq] = NoPiece
 }
 
+// FindKing returns the square of the king for the given colour,
+// or NoSquare if no king is found.
+func FindKing(pos *Position, c Color) Square {
+	king := NewPiece(c, King)
+	for sq := Square(0); sq < 64; sq++ {
+		if pos.PieceAt(sq) == king {
+			return sq
+		}
+	}
+	return NoSquare
+}
+
 // StartingPosition returns the standard chess starting position.
 func StartingPosition() Position {
 	pos := EmptyPosition()

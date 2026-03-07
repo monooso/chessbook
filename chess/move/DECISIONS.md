@@ -14,9 +14,9 @@ Castling moves use the Chess960 convention: `From` is the king's square, `To` is
 
 `IsSquareAttacked` checks each piece type separately (pawn, knight, bishop, rook, queen, king) rather than scanning outward from the target square. This is slightly redundant (bishop and queen share diagonal directions) but keeps each function simple and self-contained. The queen check uses the combined bishop + rook directions.
 
-## findKing linear scan
+## FindKing linear scan
 
-`findKing` scans all 64 squares to locate the king. This is called once per candidate move during legality filtering. An alternative would be to track king positions explicitly in the Position type, but that adds state management complexity for a marginal performance gain. The linear scan is O(64) and typically finds the king early.
+`board.FindKing` scans all 64 squares to locate the king. This is called once per candidate move during legality filtering. An alternative would be to track king positions explicitly in the Position type, but that adds state management complexity for a marginal performance gain. The linear scan is O(64) and typically finds the king early.
 
 ## Shared direction tables
 

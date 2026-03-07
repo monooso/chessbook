@@ -91,10 +91,11 @@ func TestEncodeCastlingRightsChess960(t *testing.T) {
 }
 
 func TestEncodeEnPassantBlackToMove(t *testing.T) {
-	// After 1.d4, black to move, en passant on d3.
+	// After 1.d4, black to move, en passant on d3. Black pawn on e4 can capture.
 	pos := EmptyPosition()
 	pos.Put(NewPiece(White, King), NewSquare(FileE, Rank1))
 	pos.Put(NewPiece(Black, King), NewSquare(FileE, Rank8))
+	pos.Put(NewPiece(Black, Pawn), NewSquare(FileE, Rank4))
 	pos.SideToMove = Black
 	pos.EnPassant = NewSquare(FileD, Rank3)
 
@@ -107,10 +108,11 @@ func TestEncodeEnPassantBlackToMove(t *testing.T) {
 }
 
 func TestEncodeEnPassantWhiteToMove(t *testing.T) {
-	// After 1.e4 d5 2.e5 f5, white to move, en passant on f6.
+	// After 1.e4 d5 2.e5 f5, white to move, en passant on f6. White pawn on e5 can capture.
 	pos := EmptyPosition()
 	pos.Put(NewPiece(White, King), NewSquare(FileE, Rank1))
 	pos.Put(NewPiece(Black, King), NewSquare(FileE, Rank8))
+	pos.Put(NewPiece(White, Pawn), NewSquare(FileE, Rank5))
 	pos.SideToMove = White
 	pos.EnPassant = NewSquare(FileF, Rank6)
 
@@ -132,5 +134,41 @@ func TestEncodeNoEnPassant(t *testing.T) {
 
 	if decoded.EnPassant != NoSquare {
 		t.Errorf("EnPassant = %s, want NoSquare", decoded.EnPassant)
+	}
+}
+
+func TestEncodeEnPassantNormalized(t *testing.T) {
+	// EP square set, but no opposing pawn can capture. The encoding should
+	// strip the EP square to match Zobrist normalisation (design doc 003).
+	pos := EmptyPosition()
+	pos.Put(NewPiece(White, King), NewSquare(FileE, Rank1))
+	pos.Put(NewPiece(Black, King), NewSquare(FileE, Rank8))
+	pos.Put(NewPiece(White, Pawn), NewSquare(FileD, Rank5))
+	pos.SideToMove = White
+	pos.EnPassant = NewSquare(FileF, Rank6) // no white pawn on e5 or g5
+
+	encoded := Encode(&pos)
+	decoded := Decode(encoded)
+
+	if decoded.EnPassant != NoSquare {
+		t.Errorf("phantom EP not stripped: got %s, want NoSquare", decoded.EnPassant)
+	}
+}
+
+func TestEncodeEnPassantPreservedWhenLegal(t *testing.T) {
+	// EP square set, and an opposing pawn CAN capture. The encoding should
+	// preserve the EP square.
+	pos := EmptyPosition()
+	pos.Put(NewPiece(White, King), NewSquare(FileE, Rank1))
+	pos.Put(NewPiece(Black, King), NewSquare(FileE, Rank8))
+	pos.Put(NewPiece(White, Pawn), NewSquare(FileE, Rank5)) // can capture on f6
+	pos.SideToMove = White
+	pos.EnPassant = NewSquare(FileF, Rank6)
+
+	encoded := Encode(&pos)
+	decoded := Decode(encoded)
+
+	if decoded.EnPassant != NewSquare(FileF, Rank6) {
+		t.Errorf("legal EP stripped: got %s, want f6", decoded.EnPassant)
 	}
 }

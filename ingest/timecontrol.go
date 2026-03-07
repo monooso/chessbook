@@ -46,6 +46,7 @@ func parseTimeControlCategory(tc string) (int16, bool) {
 			}
 		}
 
+		// Estimated game duration assumes ~40 moves (FIDE convention).
 		totalSeconds += base + 40*increment
 	}
 

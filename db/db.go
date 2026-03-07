@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -53,6 +54,10 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 
 	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".up.sql") {
+			continue
+		}
+
 		var version int
 		if _, err := fmt.Sscanf(entry.Name(), "%03d_", &version); err != nil {
 			continue

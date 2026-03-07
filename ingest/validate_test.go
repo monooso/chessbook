@@ -127,6 +127,24 @@ func TestValidateFileMultipleGames(t *testing.T) {
 	}
 }
 
+func TestValidateFileRejectsUnknownResult(t *testing.T) {
+	games := parseGames(t, `[Event "Test"]
+[Site "Here"]
+[Date "2024.01.15"]
+[Round "1"]
+[White "Alice"]
+[Black "Bob"]
+[Result "*"]
+
+1. e4 *
+`)
+
+	_, err := ValidateFile(games)
+	if err == nil {
+		t.Fatal("expected error for * result")
+	}
+}
+
 func TestValidateFileCustomStartingPosition(t *testing.T) {
 	games := parseGames(t, `[Event "Test"]
 [Site "Here"]
